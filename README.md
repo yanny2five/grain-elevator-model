@@ -1,6 +1,6 @@
-# Grain elevator model
+# Grain elevator project: code
 
-This repository holds the model code from a research project. The project dates when each USDA WCMD licensed grain elevator first appears in NAIP aerial photos. **Only code is included.** The data, the imagery (about 28 GB), the outputs and the trained model files are kept separately.
+This repository holds all the code from a research project. The project dates when each USDA WCMD licensed grain elevator first appears in NAIP aerial photos. **Only code is included.** The data, the imagery (about 28 GB), the outputs and the trained model files are kept separately.
 
 ## How the model works
 1. **Features:** a frozen, ImageNet-pretrained ResNet-50 turns each 300 m NAIP image chip into 2,048 features.
@@ -28,12 +28,26 @@ This repository holds the model code from a research project. The project dates 
 | `hard_negatives.py`, `tune_search.py`, `search_v4.py`, `road_buffer_search_test.py` | Train and test the town-search detector |
 | `town_scan.py`, `town_candidates.py`, `town_resolve.py`, `town_pick_merge.py`, `candidate_review.py` | Town search: suggest spots, person picks |
 
-### Helpers (`src/`)
-| Script | What it does |
+### Pipeline (`src/`), in order
+| Step | Script | What it does |
+|---|---|---|
+| 1 | `clean_dataset.py` | Clean the raw WCMD export and build the facility table |
+| 2 | `find_addresses.py`, `company_locations.py` | Locate each facility, using company location lists and other public evidence |
+| 3 | `geocode.py` | Turn street addresses into coordinates, with a quality flag |
+| 4 | `earth_engine.py`, `export_yearly_imagery.py` | Download one NAIP image per facility per year (Google Earth Engine) |
+| 5 | `src/ml/` | Score each year and estimate the first visible year (see above) |
+| 6 | `review_facilities.py`, `review_location_check.py`, `review_index.py`, `preview_location.py` | Human review pages for locations and dates |
+| 7 | `estimate_build_year.py`, `validate.py` | Turn labels into first-appearance estimates and compare them with known dates |
+| 8 | `build_master.py` | Final dataset: USDA fields, location and the imagery estimates |
+
+| Other | What it does |
 |---|---|
-| `utils.py` | Config, paths, logging |
-| `earth_engine.py` | Google Earth Engine imagery access |
-| `find_addresses.py`, `clean_dataset.py` | Shared location and name helpers used by the town search |
+| `run_overnight.py` | Run the whole pipeline unattended |
+| `utils.py` | Config, paths, logging, caches |
+| `select_prototype.py` | Pick the first ~10 test facilities |
+| `road_distance_test.py` | Test how close elevators are to roads (used by the town search) |
+| `explorer/build_explorer.py` | Build the time-lapse explorer page |
+| `browser/extract_addresses.js` | Browser helper for copying locations from company websites |
 
 ## Setup
 ```
