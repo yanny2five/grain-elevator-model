@@ -1,0 +1,55 @@
+# Central configuration for the WCMD grain-elevator history project.
+# All paths are relative to the project root.
+
+paths:
+  raw_csv: data/raw/WCMD_facilities_address_working.csv
+  processed_dir: data/processed
+  addresses_dir: data/addresses
+  imagery_dir: data/imagery
+  cache_dir: data/cache
+  outputs_dir: outputs
+  logs_dir: logs
+  # Census 2020 reference files (downloaded once into cache_dir; public domain)
+  place_by_county: data/cache/place_by_county2020.txt
+  county_list: data/cache/county2020.txt
+  place_centroids: data/cache/2020_Gaz_place_national.txt
+
+addresses:
+  overpass_url: https://overpass.private.coffee/api/interpreter   # 2026-10-17: swapped, overpass-api.de returning 502
+  overpass_mirror_url: https://overpass-api.de/api/interpreter
+  overpass_min_interval_s: 2.0
+  echo_min_interval_s: 1.0
+  search_radius_m: 6000              # minimum search radius around the Census place centroid
+  max_search_radius_m: 20000         # radius grows with town land area up to this
+  silo_cluster_m: 200                # silos closer than this form one site
+  name_match_to_silo_m: 400          # named feature "has silos" if a cluster is this close
+  same_site_m: 800                   # registry/OSM points closer than this = same site
+  corroborate_m: 700                 # EPA point is corroborated if a silo cluster is this close
+
+# Which license categories are "in scope" for the core study.
+# USWA = United States Warehouse Act = federally licensed warehouses.
+# State-licensed and unlicensed CCC-approved warehouses are kept in the master
+# table (never deleted) but flagged is_uswa = False.
+scope:
+  uswa_license_types: ["Federal"]
+
+prototype:
+  n_facilities: 10
+  random_seed: 20261002
+
+geocode:
+  user_agent: "wcmd-elevator-research (academic project)"
+  nominatim_min_interval_s: 1.1      # Nominatim policy: max 1 request/second
+  census_min_interval_s: 0.2
+
+earth_engine:
+  project: praxis-practice-510500-v9  # Google Cloud project registered for Earth Engine
+  roi_half_width_m: 1000             # ROI = 2 km x 2 km square around facility (was 600; widened 2026-10-26 per advisor so both elevators + rail tracks fit)
+  landsat_start_year: 1984
+  naip_start_year: 2003
+  sentinel2_start_year: 2017
+  export_scale_m:
+    landsat: 15                      # pan-sharpened where possible, else 30 m
+    sentinel2: 10
+    naip: 2                          # 2 m for bulk runs (~10 MB/facility, bins still clear); 1 m = full detail (~40 MB). Prototype used 1 m.
+  max_cloud_pct: 40

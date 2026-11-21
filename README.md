@@ -1,0 +1,43 @@
+# Grain elevator model
+
+This repository holds the model code from a research project. The project dates when each USDA WCMD licensed grain elevator first appears in NAIP aerial photos. **Only code is included.** The data, the imagery (about 28 GB), the outputs and the trained model files are kept separately.
+
+## How the model works
+1. **Features:** a frozen, ImageNet-pretrained ResNet-50 turns each 300 m NAIP image chip into 2,048 features.
+2. **Classifier:** a logistic regression on those features gives P(elevator) for each chip.
+3. **Dating:** each site's yearly probabilities go into a step rule, which gives the first year the elevator is visible. That year is the first visible year, not the build year.
+4. **Testing:** cross-validation is grouped by site, so no site appears in both training and test.
+5. **Town search:** the same detector scans a town for elevators. It suggests 4 spots, and a person picks the right one.
+
+`finetune.py` is the first test of fine-tuning the whole network. It is the starting point for the next baseline.
+
+## Scripts
+
+### Model (`src/ml/`)
+| Script | What it does |
+|---|---|
+| `build_dataset.py` | Build the weakly labelled chip dataset |
+| `train_eval.py` | Train and evaluate the presence classifier |
+| `train_v2.py` | Detector v2: chips plus every labelled year image |
+| `finetune.py` | Fine-tune the whole ResNet-50 on the GPU |
+| `apply.py` | Apply the classifier to every site's NAIP series |
+| `dating_experiment.py`, `model_search_dating.py` | Dating rule experiments, tested leaving one site out at a time |
+| `image_quality.py` | Flag blank (no-data) NAIP images |
+| `review_triage.py`, `review_queue.py` | Choose which ML dates a person should check |
+| `date_check_page.py`, `date_check_spots.py`, `date_check_summary.py` | Human date-check page and its summary |
+| `hard_negatives.py`, `tune_search.py`, `search_v4.py`, `road_buffer_search_test.py` | Train and test the town-search detector |
+| `town_scan.py`, `town_candidates.py`, `town_resolve.py`, `town_pick_merge.py`, `candidate_review.py` | Town search: suggest spots, person picks |
+
+### Helpers (`src/`)
+| Script | What it does |
+|---|---|
+| `utils.py` | Config, paths, logging |
+| `earth_engine.py` | Google Earth Engine imagery access |
+| `find_addresses.py`, `clean_dataset.py` | Shared location and name helpers used by the town search |
+
+## Setup
+```
+pip install -r requirements.txt
+earthengine authenticate
+```
+Paths and settings are in `config/config.yaml`. Scripts expect the data folders (`data/`, `outputs/`) at the project root.
