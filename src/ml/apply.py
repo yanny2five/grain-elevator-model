@@ -104,7 +104,7 @@ def summarize(by_year: pd.DataFrame, train_ids: set[str]) -> pd.DataFrame:
         if grid:
             flags.append("address-level coordinates: grid search may include a neighbouring elevator")
         if fid in train_ids:
-            flags.append("recent years used as training positives")
+            flags.append("facility used in model training - scores are in-sample")
         if n_blank:
             flags.append(f"{n_blank} blank NAIP image(s) skipped")
         conf = ("LOW" if any("review" in f for f in flags) or grid else
@@ -124,6 +124,8 @@ def summarize(by_year: pd.DataFrame, train_ids: set[str]) -> pd.DataFrame:
 
 def main() -> None:
     train_ids = set(pd.read_csv(ML / "chips.csv", dtype=str)["facility_id"])
+    if (ML / "model_v2_training.csv").exists():  # v2 also trains on labelled year images
+        train_ids |= set(pd.read_csv(ML / "model_v2_training.csv", dtype=str)["facility_id"])
     if "--summarize-only" in sys.argv:
         by = pd.read_csv(path("outputs_dir") / "ml_presence_by_year.csv", dtype={"facility_id": str})
         s = summarize(by, train_ids)

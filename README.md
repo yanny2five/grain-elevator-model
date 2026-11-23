@@ -55,3 +55,13 @@ pip install -r requirements.txt
 earthengine authenticate
 ```
 Paths and settings are in `config/config.yaml`. Scripts expect the data folders (`data/`, `outputs/`) at the project root.
+
+## Code review fixes (2026-11-22)
+
+- `validate.py`: "present at start" sites now check a construction year as an upper bound (was reversed).
+- `geocode.py`: and/or precedence fixed; person-picked and company-coordinate sources handled explicitly;
+  unknown coordinate sources fail closed (NONE) instead of defaulting to REGISTRY.
+- `build_master.py`: no crash without an imagery manifest.
+- `ml/apply.py`: facilities used to train model_v2 are flagged as in-sample.
+- `ml/train_v2.py`, `ml/dating_experiment.py`: crop size per image from the manifest, not the config.
+- `ml/build_dataset.py`: hard-negative comment corrected.

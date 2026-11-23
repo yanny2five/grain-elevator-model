@@ -61,8 +61,10 @@ def main() -> None:
                  build_year_confidence=e["build_year_confidence"])
         if k["event"] in BUILD_EVENTS:
             if lo is None:
-                r["result"] = "CONSISTENT" if y >= (hi or fv) - 1 else "NOT_COMPARABLE"
-                r["detail"] = "facility present at start of record; event can only be checked as an upper bound"
+                bound = hi or fv
+                r["result"] = "CONSISTENT" if y <= bound + 1 else "INCONSISTENT"
+                r["detail"] = (f"facility present in first image ({bound}): built on or before then; "
+                               f"event {y} checked as an upper bound (+1 yr tolerance)")
             else:
                 ok = lo - 1 <= y <= hi + 1
                 r["result"] = "CONSISTENT" if ok else "INCONSISTENT"

@@ -49,6 +49,15 @@ def labelled_ids() -> set[str]:
     return set(pd.concat([pd.read_csv(f, dtype=str) for f in files])["facility_id"])
 
 
+def image_half_widths() -> dict:
+    """(facility_id, year) -> roi_half_width_m that NAIP image was exported with (from the manifest).
+    Images were exported at 600 m before 2026-10-26 and 1000 m after, so never take this from the config."""
+    man = pd.read_csv(path("imagery_dir") / "manifest.csv", dtype=str, keep_default_na=False)
+    # The manifest keeps every export; a re-export overwrites the PNG, so the LAST row with an image wins.
+    man = man[(man["sensor"] == "naip") & (man["image_path"] != "")]
+    return {(f, int(y)): float(h) for f, y, h in zip(man["facility_id"], man["year"], man["roi_half_width_m"]) if h}
+
+
 def center_crop(img_path: Path, half_width_m: float) -> Image.Image:
     """Central CHIP_M x CHIP_M of a facility image covering 2*half_width_m."""
     im = Image.open(img_path).convert("RGB")
@@ -109,8 +118,9 @@ def main() -> None:
             rows.append({"path": out.relative_to(PROJECT_ROOT).as_posix(), "label": 1,
                          "facility_id": f["facility_id"], "year": int(r["year"]), "kind": "facility_recent",
                          "lat": f["latitude"], "lon": f["longitude"]})
-        # Hard negatives: the four corners of the newest facility image (centred 450 m
-        # from the elevator, covering 300-600 m away) - town blocks, rail yards, other
+        # Hard negatives: the four corners of the newest facility image (a 600 m image gives
+        # chips centred 450 m from the elevator; a 1000 m image puts them ~850 m out along
+        # each axis, so they are easier negatives) - town blocks, rail yards, other
         # industry - so the model must learn "elevator", not just "built-up vs field".
         if len(m):
             newest = m.sort_values("year").iloc[-1]

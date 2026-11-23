@@ -34,10 +34,10 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build_dataset import SIZE, center_crop  # noqa: E402
+from build_dataset import SIZE, center_crop, image_half_widths  # noqa: E402
 from candidate_review import GpuEmbedder  # noqa: E402
 from train_eval import make_model, step_fit  # noqa: E402
-from utils import PROJECT_ROOT, get_logger, load_config  # noqa: E402
+from utils import PROJECT_ROOT, get_logger  # noqa: E402
 
 log = get_logger("ml_dating_experiment")
 ML = PROJECT_ROOT / "data" / "ml"
@@ -84,7 +84,7 @@ def agree(pred: dict, tru: dict) -> bool:
 
 
 def main() -> None:
-    half_m = float(load_config()["earth_engine"]["roi_half_width_m"])
+    half = image_half_widths()  # per image, not the config (old images are 600 m, new 1000 m)
     lab = label_table()
     fids = sorted(lab["facility_id"].unique())
     # year images of labelled facilities: centre 300 m chip of every NAIP year
@@ -94,7 +94,7 @@ def main() -> None:
             recs.append({"facility_id": fid, "year": int(f.stem), "path": f})
     yr = pd.DataFrame(recs).merge(lab[["facility_id", "year", "y"]], on=["facility_id", "year"], how="left")
     emb = GpuEmbedder()
-    Xy = emb([center_crop(p, half_m) for p in yr["path"]])
+    Xy = emb([center_crop(p, half[(f, int(y))]) for p, f, y in zip(yr["path"], yr["facility_id"], yr["year"])])
     log.info("labelled facilities %d, year images %d (%d with a usable label)", len(fids), len(yr), yr["y"].notna().sum())
 
     chips = pd.read_csv(ML / "chips.csv")

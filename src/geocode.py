@@ -99,17 +99,19 @@ class Geocoder:
 
 def classify_existing(coord_source: str) -> str:
     s = coord_source.lower()
-    if "imagery" in s or "silo cluster" in s or "structures" in s and "not confirmed" not in s:
+    if "not confirmed" not in s and ("imagery" in s or "silo cluster" in s or "structures" in s):
         return "STRUCTURE"
+    if "picked by a person" in s or "hand review" in s:
+        return "STRUCTURE"  # a person placed the pin on the elevator in the imagery
     if "osm feature" in s:
         return "STRUCTURE"
-    if "registry" in s or "frs" in s or "ecology" in s:
+    if "registry" in s or "frs" in s or "ecology" in s or "company site coordinates" in s:
         return "REGISTRY"
     if "census" in s or "nominatim" in s:
         return "ADDRESS"
     if "city" in s or "centroid" in s:
         return "CITY"
-    return "REGISTRY" if s else "NONE"
+    return "NONE"  # unknown source: fail closed (not clip_ok) until a rule is added above
 
 
 def main() -> None:

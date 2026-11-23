@@ -23,22 +23,22 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build_dataset import center_crop  # noqa: E402
+from build_dataset import center_crop, image_half_widths  # noqa: E402
 from candidate_review import GpuEmbedder  # noqa: E402
 from dating_experiment import label_table  # noqa: E402
 from train_eval import make_model  # noqa: E402
-from utils import PROJECT_ROOT, get_logger, load_config  # noqa: E402
+from utils import PROJECT_ROOT, get_logger  # noqa: E402
 
 log = get_logger("ml_train_v2")
 ML = PROJECT_ROOT / "data" / "ml"
 
 
 def main() -> None:
-    half_m = float(load_config()["earth_engine"]["roi_half_width_m"])
+    half = image_half_widths()  # per image, not the config (old images are 600 m, new 1000 m)
     lab = label_table().dropna(subset=["y"])
     lab["path"] = [PROJECT_ROOT / "data" / "imagery" / f / "naip" / f"{y}.png" for f, y in zip(lab["facility_id"], lab["year"])]
     lab = lab[[p.exists() for p in lab["path"]]]
-    Xy = GpuEmbedder()([center_crop(p, half_m) for p in lab["path"]])
+    Xy = GpuEmbedder()([center_crop(p, half[(f, int(y))]) for p, f, y in zip(lab["path"], lab["facility_id"], lab["year"])])
 
     chips = pd.read_csv(ML / "chips.csv")
     Xc = np.load(ML / "embeddings.npz")["X"]

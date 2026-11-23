@@ -81,7 +81,8 @@ def main() -> None:
     for c in LOCATION + ESTIMATE + ["imagery_source", "flags", "review_notes"]:
         if c not in df.columns:
             df[c] = ""
-    df["n_images"] = pd.to_numeric(df.get("n_images", 0), errors="coerce").fillna(0).astype(int)
+    df["n_images"] = (pd.to_numeric(df["n_images"], errors="coerce").fillna(0).astype(int)
+                      if "n_images" in df.columns else 0)
     df = df.fillna("")
     df["manual_review_status"] = df.apply(manual_review_status, axis=1)
     df["research_notes"] = (df["flags"].astype(str) + " " + df["review_notes"].astype(str)).str.strip()
